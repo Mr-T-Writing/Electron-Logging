@@ -1,10 +1,10 @@
-# Electron Logging
+# Electron Logging with electron-log
 
 <details>
 <summary>Table of Contents</summary>
 
 - [Intro](#intro)
-- [electron-log](#electron-log)
+- [electron-log](#-meet-electron-log-)
 - [Process Specific Logging](#process-specific-logging)
   - [Logging `MAIN PROCESS` & `RENDER PROCESS(es)`](#logging-main-process--render-processes)
   - [Logging `UTILITY PROCESS(es)`](#logging-utility-processes)
@@ -16,57 +16,42 @@
 > _[code example](https://github.com/MrT3313/ELECTRON-EXAMPLE)_
 
 </details>
-</br>
 
 # Intro
 
+The [unique multi-process architecture of Electron](https://github.com/Mr-T-Writing/Electron-101/blob/main/README.md) comprising a <code>MAIN PROCESS</code> and one or more <code>RENDER PROCESS(es) / UTILITY PROCESS(es)</code> introduces complexities not found in traditional web or Node.js development. Without proper logging, tracking errors across these isolated processes quickly becomes a nightmare.
+
+# 🎉🎉 Meet `electron-log` 🎉🎉
+
+<p align="center">
+  a widely accepted ...<strong>logging...</strong> solution for ...<strong>Electron...</strong>
+</p>
+
 <div align="center">
-  <p>
-    The <a href='https://github.com/Mr-T-Writing/Electron-101/blob/main/README.md'>unique multi-process architecture of Electron</a> comprising a <code>MAIN PROCESS</code> and one or more <code>RENDER PROCESS(es) / UTILITY PROCESS(es)</code> introduces complexities not found in traditional web or Node.js development. Without proper logging, tracking errors across these isolated processes quickly becomes a nightmare.
-  </p>
-
-  <p>To solve these pesky debugging problems I would like to introduce 🥁🥁🥁🥁</p>
-
-  <h1 style="border-bottom: none; margin: 0; margin-top: 10px">
-    🎉🎉 <a href="https://github.com/megahertz/electron-log">electron-log</a> 🎉🎉
-  </h1>
-
-  <p>
-    which is a widely accepted ... <strong>logging...</strong> solution for ... <strong>Electron...</strong>
-  </p>
-
-  </br>
-
-  <img src="./assets/hmm-suspect.gif">
+  <img align="center" src="./assets/hmm-suspect.gif">
 </div>
 
-# electron-log
+</br>
 
-`electron-log` established a unified logging system across all Electron processes, ensuring logs from the `MAIN PROCESS`, `RENDER PROCESS(es)`, and `UTILITY PROCESS(es)` are captured, organized, shown, and stored effectively.  
+`electron-log` is highly configurable and this article explores some best practices for building a unified logging system across all Electron processes. We'll cover how to ensure logs from the `MAIN PROCESS`, `RENDERER PROCESS(ES)`, and `UTILITY PROCESS(ES)` are effectively captured, organized, displayed, and stored.  
 
-This logging approach is designed to:
+Our logging approach is designed to:
 
-1.  **Automatically Centralize Renderer Logs via IPC:** The `RENDER PROCESS(es)` logger (`electron-log/renderer`) automatically sends all logs to the `MAIN PROCESS` logger (`electron-log/main`) via `Inter-Process Communication (IPC)`. 
+1.  **Automatically Centralize Renderer Logs via IPC:**  
+A `RENDER PROCESS` logger (`electron-log/renderer`) will automatically send all logs to the `MAIN PROCESS` logger (`electron-log/main`) via `Inter-Process Communication (IPC)`. 
     
     This automation is triggered when `log.initialize()` is called in the `MAIN PROCESS`.
 
-    ```typescript
-    // In your main Electron process
-    import log from 'electron-log/main';
-
-    // Initialize electron-log for the main process.
-    // This also sets up the IPC listener for logs from renderer processes.
-    log.initialize(); 
-    ```
-
-2.  **Consistent Formatting:** A standard log message format is applied across all processes and log transports/outputs _(console and file)_.
+2.  **Consistent Formatting:**  
+A standard log message format is applied across all processes and log transports/outputs _(console and file)_.
 
     Transport formats are defined in the `electron-log/main` instance. Logs sent from `electron-log/renderer` will be formatted by the main process according to these definitions.
 
     - `log.transports.file.format = '{h}:{i}:{s} [{processType}{scope}] [{level}] > {text}'`
     - `log.transports.console.format = '{h}:{i}:{s} [{processType}{scope}] [{level}] > {text}'`
 
-3.  **Structured Log Storage:** Logs are stored in a predictable directory structure.
+3.  **Structured Log Storage:**   
+Logs are stored in a predictable directory structure.
 
     - **Windows**: `%APPDATA%\{APP_NAME}\logs\...`
     - **macOS**: `~/Library/Application Support/{APP_NAME}/logs/...`
@@ -74,11 +59,14 @@ This logging approach is designed to:
 
     You can configure a custom log path using the `log.transports.file.resolvePathFn(...)` function.
 
-4.  **Independent Utility Logs:** `UTILITY PROCESS(es)` require their own separate `electron-log/main` instance to write logs directly.
+4.  **Independent Utility Logs:**  
+`UTILITY PROCESS(es)` require their own separate `electron-log/main` instance and write logs independently.
     
-    While we could configure `UTILITY PROCESS(es)` with different logging approaches (just as `RENDER PROCESS(es)` _could_ handle their own logging independently), maintaining consistency is key to a unified logging strategy.
+    > [!NOTE]
+    > 
+    > While we _could_ configure `UTILITY PROCESS(es)` with different logging approaches (just as the `MAIN PROCESS` and `RENDER PROCESS(es)` _could_ handle their own logging independently), maintaining consistency is key to a unified logging strategy.
     
-    By using the same `log.transports.file.resolvePathFn(...)` and `log.transports.<file/console>.format` configurations across all processes, their separate logging logic integrate seamlessly into the application's overall logs.
+    By using the same `log.transports.file.resolvePathFn(...)` and `log.transports.<file/console>.format` configurations across all processes, their separate logging logic integrates seamlessly into the application's overall logs.
 
 ## Log Rotation and Archiving with `electron-log`
 
@@ -96,19 +84,7 @@ You can control the maximum size of a log file using `log.transports.file.maxSiz
 
 ### Custom Archiving
 
-For more complex archiving logic (like compressing old logs, moving them to a different location, or deleting them based on age), you can use the `log.transports.file.archiveLog` function. This function is called before a log file is overwritten during rotation (if `maxSize` is set and reached) or when `log.rotateLogNow()` is called.
-
-```typescript
-log.transports.file.archiveLog = (file) => {
-  // Example: Compress the log file
-  // const Gzip = zlib.createGzip();
-  // const  source = fs.createReadStream(file.path);
-  // const  destination = fs.createWriteStream(`${file.path}.gz`);
-  // source.pipe(Gzip).pipe(destination);
-  // fs.unlinkSync(file.path); // Remove original after archiving
-  console.log('Archiving log file:', file.path);
-};
-```
+For more complex archiving logic (like compressing old logs, moving them to a different location, or deleting them based on age), you can use the `log.transports.file.archiveLog()` function. This function is called before a log file is overwritten during log rotation or when `log.rotateLogNow()` is called.
 
 # Process Specific Logging
 
@@ -122,8 +98,6 @@ log.transports.file.archiveLog = (file) => {
 <summary><code>MAIN PROCESS</code> Logger</summary>
 
 ```javascript
-// electron/main/logger/index.ts
-
 import log from 'electron-log/main'
 import path from 'path';
 import moment from 'moment'
@@ -170,8 +144,6 @@ log.transports.file.resolvePathFn = (variables, message) => {
 <summary><code>RENDER PROCESS(es)</code> Logger</summary>
 
 ```ts
-// src/lib/logger.ts
-
 import log from 'electron-log/renderer';
 
 // Logs from the electron-log/renderer are automatically sent to the 
@@ -195,7 +167,7 @@ Key components of the structure:
 
 > [!IMPORTANT]
 >
-> the `UTILITY PROCESS(es)` logging **does not** communicate with the `MAIN PROCESS` logger like the `RENDER PROCESS(es)` loggers do over the `IPC`. The `UTILITY PROCESS(es)` configure their own `electron-log/main` instance.
+> A `UTILITY PROCESS(es)` logger **does not** communicate with the `MAIN PROCESS` logger like a `RENDER PROCESS` logger does over `IPC`. A `UTILITY PROCESS` will configure its own `electron-log/main` logger instance and write logs independently.
 
 <details>
 <summary><code>UTILITY PROCESS(es)</code>Logger</summary>
@@ -259,19 +231,6 @@ Key components of the structure:
 
 While `electron-log`'s default text-based format is convenient for human reading, structured logging (typically in JSON format) is highly beneficial for production environments. JSON logs are easier to parse, search, and analyze by log management systems.
 
-Effective logs include rich contextual information that helps in diagnosing issues (while respecting memory usage & readability / parsing concerns). Consider adding fields like:
-
-  - `appName`: `app.getName()`
-  - `appVersion`: `app.getVersion()`
-  - `electronVersion`: `process.versions.electron`
-  - `chromeVersion`: `process.versions.chrome`
-  - `nodeVersion`: `process.versions.node`
-  - `osPlatform`: `os.platform()`
-  - `osRelease`: `os.release()`
-  - `processId`: `process.pid`
-
-Here's an example of incorporating some of this into the custom JSON formatter:
-
 ```typescript
 log.transports.file.format = (message) => {
   const logData = {
@@ -318,19 +277,31 @@ if (app.isPackaged) {
   // log.transports.file.format = ...
   // log.transports.console.format = ...
 }
-
-// Note: electron-log's IPC transport (for main process logs to renderer console)
-// is disabled by default in production (when app.isPackaged is true).
 ```
+
+> [!NOTE]
+> 
+> electron-log's IPC transport (for main process logs to renderer console) is disabled by default in production (when app.isPackaged is true).
 
 # Security Considerations
 
-**Never log sensitive information.** This includes passwords, API keys, personally identifiable information (PII), or any other confidential data. Review your log messages and contextual data to ensure they do not inadvertently expose such information.
-
-> [!IMPORTANT]
+> [!WARNING]
 >
 > `electron-log` does not offer built-in features for automatic redaction or masking of sensitive data within log messages. The responsibility for preventing sensitive data leakage into logs falls entirely on the application developer. You must implement custom logic to scrub or mask data *before* it is passed to `electron-log`'s logging methods.
 
 # A Note on Alternative Logging Libraries
 
-While `electron-log` is an excellent choice for most Electron applications due to its simplicity and built-in Electron-specific features like automated IPC for renderer logs, other powerful logging libraries like `Winston` and `Pino` are also available. These libraries offer extensive configurability and performance characteristics that might be beneficial for very complex applications or those with extreme logging volume. However, they typically require more manual setup for Electron's multi-process environment.
+While `electron-log` is an excellent choice for most Electron applications due to its simplicity and built-in Electron-specific features like automated IPC for renderer logs, the JavaScript ecosystem offers many powerful logging solutions.
+
+These alternatives typically require more manual setup for Electron's multi-process environment, but they can be valuable for applications with specific requirements around performance, configurability, or integration with existing logging infrastructure.
+
+## Popular JavaScript Logging Libraries
+
+| Library       | Key Strengths                                                   | Best For |
+|---------      |---------------                                                  |----------|
+| **Winston**   | Highly configurable, multiple transports, extensive ecosystem   | Enterprise applications, complex logging requirements |
+| **Pino**      | Ultra-fast performance, structured JSON logging, low overhead   | High-performance applications, microservices |
+| **Bunyan**    | Structured JSON logs, powerful CLI tools, stream-based          | Applications requiring log analysis and filtering |
+| **Signale**   | Beautiful console output, customizable loggers        | Development environments, CLI applications |
+| **Consola**   | Universal logging, browser/Node.js support, modern API          | Full-stack applications, universal JavaScript |
+| **Log4js**    | Java Log4j inspired, familiar patterns, flexible configuration  | Teams familiar with Java logging, enterprise environments |
