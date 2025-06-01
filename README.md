@@ -33,7 +33,7 @@ The [unique multi-process architecture of Electron](https://github.com/Mr-T-Writ
 
 </br>
 
-`electron-log` is highly configurable and this article explores some best practices for building a unified logging system across all Electron processes. We'll cover how to ensure logs from the `MAIN PROCESS`, `RENDERER PROCESS(ES)`, and `UTILITY PROCESS(ES)` are effectively captured, organized, displayed, and stored.  
+`electron-log` is highly configurable and this article explores some best practices for building a unified logging system across all Electron processes. We'll cover how to ensure logs from the `MAIN PROCESS`, `RENDERER PROCESS(es)`, and `UTILITY PROCESS(es)` are effectively captured, organized, displayed, and stored.  
 
 Our logging approach is designed to:
 
